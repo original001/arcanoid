@@ -41,7 +41,17 @@ class Rect {
 class Ball extends Rect {
 	constructor() {
 		super(10, 10);
-		this.vel = new Vec(100, 100);
+		this._speedX = 200;
+		this._speedY = 200;
+		this.vel = new Vec(this._speedX, this._speedY);
+	}
+	stop() {
+		this.vel.x = 0;
+		this.vel.y = 0;
+	}
+	start() {
+		this.vel.x = Math.random > .5 ? this._speedX : -this._speedX;
+		this.vel.y = -this._speedY;
 	}
 }
 
@@ -49,7 +59,7 @@ class Player extends Rect {
 	constructor() {
 		super(100, 10)
 		this.pos = new Vec(canvas.width / 2 - this.size.x / 2, canvas.height - 20);
-		this.vel = new Vec(5, 5);
+		this.vel = new Vec(10, 10);
 	}
 
 	moveRight() {
@@ -103,20 +113,29 @@ class Game {
 		this.genEnemies();
 	}
 	genEnemies() {
-		this.enemies = [new Enemy(50, 100), new Enemy(150, 100)];
+		let enemies = [];
+		let h = 20;
+		while (150 - h > 0) {
+			let w = 0
+			while (canvas.width - w > 0) {
+				enemies.push(new Enemy(w, h));
+				w += 30
+			}
+			h += 20
+		}
+
+		this.enemies = enemies
 	}
 	reset() {
-		this.ball.vel.x = 0;
-		this.ball.vel.y = 0;
-		this.ball.pos.x = this.player.centerX;
+		this.ball.stop();
+		this.ball.pos.x = this.player.centerX - this.ball.size.x / 2;
 		this.ball.pos.y = this.player.pos.y - this.ball.size.y;
 	}
 
 	start() {
 		if (this.ball.vel.x !== 0 && this.ball.vel.y !== 0) return;
 
-		this.ball.vel.x = Math.random > .5 ? 100 : -100;
-		this.ball.vel.y = -100;
+		this.ball.start();
 	}
 
 	lose() {
