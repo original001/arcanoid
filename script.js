@@ -64,23 +64,114 @@ class Player extends Rect {
 }
 
 class Enemy extends Rect {
-	constructor() {
-		super(150, 150);
-		this.pos = new Vec(100, 100);
+	constructor(x, y) {
+		super(20, 10);
+		this.pos = new Vec(x, y);
+	}
+	destroy() {
+		this.pos = new Vec(-100, 100)
 	}
 }
 
-const enemy = new Enemy();
+class Game {
+	constructor() {
+		this.init();
+		this.attachEvents();
+		this.reset();
+		this.lastTime = 0;
+		this.draw();
+	}
+	attachEvents() {
+		document.body.addEventListener('keydown', event => {
+			if (event.keyCode === 39) {
+				event.preventDefault();
+				this.player.moveRight();
+			}
+			if (event.keyCode === 37) {
+				event.preventDefault();
+				this.player.moveLeft();
+			}
+			if (event.keyCode === 32) {
+				event.preventDefault();
+				this.start();
+			}
+		});
+	}
+	init() {
+		this.player = new Player();
+		this.ball = new Ball();
+		this.genEnemies();
+	}
+	genEnemies() {
+		this.enemies = [new Enemy(50, 100), new Enemy(150, 100)];
+	}
+	reset() {
+		this.ball.vel.x = 0;
+		this.ball.vel.y = 0;
+		this.ball.pos.x = this.player.centerX;
+		this.ball.pos.y = this.player.pos.y - this.ball.size.y;
+	}
 
-const player = new Player();
+	start() {
+		if (this.ball.vel.x !== 0 && this.ball.vel.y !== 0) return;
 
-const ball = new Ball();
+		this.ball.vel.x = Math.random > .5 ? 100 : -100;
+		this.ball.vel.y = -100;
+	}
 
-reset();
+	lose() {
+		return this.ball.bottom >= canvas.height;
+	}
 
-let lastTime = 0;
+	draw(time = 0) {
+		const dt = ((time - this.lastTime)/500).toPrecision(1);
+		this.lastTime = time;
 
-function collide(item) {
+		if (this.ball.right >= canvas.width || this.ball.left <= 0) {
+			this.ball.vel.x = -this.ball.vel.x;
+		}
+		if (this.ball.top <= 0) {
+			this.ball.vel.y = -this.ball.vel.y;
+		}
+
+		var coll = collide(this.ball, this.player)
+		if (coll) {
+			this.ball.vel = scalar(this.ball.vel, coll);
+		}
+
+		this.enemies.forEach(enemy => {
+			var coll = collide(this.ball, enemy)
+			if (coll) {
+				this.ball.vel = scalar(this.ball.vel, coll);
+				enemy.destroy()
+			}
+		})
+
+		this.ball.pos.x += this.ball.vel.x * dt;
+		this.ball.pos.y += this.ball.vel.y * dt;
+
+		if (this.lose()) {
+			this.reset();
+		}
+
+		context.fillStyle = '#333';
+		context.fillRect(0, 0, canvas.width, canvas.height);
+
+		fillRect(this.ball)
+		fillRect(this.player)
+		this.enemies.forEach(enemy => fillRect(enemy));
+
+		requestAnimationFrame(this.draw.bind(this));
+	}
+
+}
+
+function fillRect(rect) {
+	context.fillStyle = '#eee'
+	context.fillRect(rect.pos.x, rect.pos.y, rect.size.x, rect.size.y);
+} 
+
+function collide(ball, item) {
 	var dtTop = ball.top - item.top;
 	var dtBottom = ball.bottom - item.bottom;
 	var dtCollideTop = ball.bottom - item.top;
@@ -104,97 +195,17 @@ function collide(item) {
 			return new Vec(1, -1);
 	}
 
-	// left
 	if (dtCollideLeft > 0 && dtTop > 0 && dtBottom < 0 && dtLeft < 0) {
 		return new Vec(-1, 1);
 	}
 
-	// right
-
 	if (dtCollideRight < 0 && dtTop > 0 && dtBottom < 0 && dtRight > 0) {
 		return new Vec(-1, 1);
 	}
-
-
-}
-
-function lose() {
-	return ball.bottom >= canvas.height;
-}
-
-function reset() {
-	ball.vel.x = 0;
-	ball.vel.y = 0;
-	ball.pos.x = player.centerX;
-	ball.pos.y = player.pos.y - ball.size.y;
-}
-
-function start() {
-	if (ball.vel.x !== 0 && ball.vel.y !== 0) return;
-
-	ball.vel.x = Math.random > .5 ? 100 : -100;
-	ball.vel.y = -100;
 }
 
 function scalar(vec1, vec2) {
 	return new Vec(vec1.x * vec2.x, vec1.y * vec2.y);
 }
 
-function draw(time = 0) {
-
-	const dt = ((time - lastTime)/500).toPrecision(1);
-	lastTime = time;
-
-	if (ball.right >= canvas.width || ball.left <= 0) {
-		ball.vel.x = -ball.vel.x;
-	}
-	if (ball.top <= 0) {
-		ball.vel.y = -ball.vel.y;
-	}
-
-	if (collide(player)) {
-		ball.vel = scalar(ball.vel, collide(player));
-	}
-
-	if (collide(enemy)) {
-		ball.vel = scalar(ball.vel, collide(enemy));
-	}
-
-	ball.pos.x += ball.vel.x * dt;
-	ball.pos.y += ball.vel.y * dt;
-
-	if (lose()) {
-		reset();
-	}
-
-	context.fillStyle = '#333';
-	context.fillRect(0, 0, canvas.width, canvas.height);
-
-	context.fillStyle = '#eee'
-	context.fillRect(ball.pos.x, ball.pos.y, ball.size.x, ball.size.y);
-
-	context.fillStyle = '#eee'
-	context.fillRect(player.pos.x, player.pos.y, player.size.x, player.size.y);
-
-	context.fillStyle = '#eee'
-	context.fillRect(enemy.pos.x, enemy.pos.y, enemy.size.x, enemy.size.y);
-
-	requestAnimationFrame(draw);
-}
-
-document.body.addEventListener('keydown', event => {
-	if (event.keyCode === 39) {
-		event.preventDefault();
-		player.moveRight();
-	}
-	if (event.keyCode === 37) {
-		event.preventDefault();
-		player.moveLeft();
-	}
-	if (event.keyCode === 32) {
-		event.preventDefault();
-		start();
-	}
-})
-
-draw();
+new Game;
