@@ -41,8 +41,8 @@ class Rect {
 class Ball extends Rect {
 	constructor() {
 		super(10, 10);
-		this._speedX = 200;
-		this._speedY = 200;
+		this._speedX = 150;
+		this._speedY = 150;
 		this.vel = new Vec(this._speedX, this._speedY);
 	}
 	stop() {
@@ -57,7 +57,7 @@ class Ball extends Rect {
 
 class Player extends Rect {
 	constructor() {
-		super(100, 10)
+		super(100, 20)
 		this.pos = new Vec(canvas.width / 2 - this.size.x / 2, canvas.height - 20);
 		this.vel = new Vec(10, 10);
 	}
@@ -111,6 +111,18 @@ class Game {
 		this.player = new Player();
 		this.ball = new Ball();
 		this.genEnemies();
+		this.setScore(0);
+		this.setLives(3);
+	}
+	setLives(lives) {
+		var livesDom = document.getElementById('lives');
+
+		livesDom.innerHTML = +livesDom.innerHTML + lives;
+	}
+	setScore(score) {
+		var scoreDom = document.getElementById('score');
+
+		scoreDom.innerHTML = +scoreDom.innerHTML + score;
 	}
 	genEnemies() {
 		let enemies = [];
@@ -128,14 +140,14 @@ class Game {
 	}
 	reset() {
 		this.ball.stop();
-		this.ball.pos.x = this.player.centerX - this.ball.size.x / 2;
-		this.ball.pos.y = this.player.pos.y - this.ball.size.y;
+		this.isHooked = true;
 	}
 
 	start() {
 		if (this.ball.vel.x !== 0 && this.ball.vel.y !== 0) return;
 
 		this.ball.start();
+		this.isHooked = false;
 	}
 
 	lose() {
@@ -163,14 +175,21 @@ class Game {
 			if (coll) {
 				this.ball.vel = scalar(this.ball.vel, coll);
 				enemy.destroy()
+				this.setScore(1);
 			}
 		})
 
 		this.ball.pos.x += this.ball.vel.x * dt;
 		this.ball.pos.y += this.ball.vel.y * dt;
 
+		if (this.isHooked) {
+			this.ball.pos.x = this.player.centerX - this.ball.size.x / 2;
+			this.ball.pos.y = this.player.pos.y - this.ball.size.y;
+		}
+
 		if (this.lose()) {
 			this.reset();
+			this.setLives(-1);
 		}
 
 		context.fillStyle = '#333';
