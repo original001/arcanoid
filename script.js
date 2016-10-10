@@ -12,7 +12,12 @@ class Rect {
 	constructor(w, h) {
 		this.pos = new Vec;
 		this.size = new Vec(w, h);
+		this._color = '#eee';
 	}
+	get color() {
+		return this._color;
+	}
+
 	get left() {
 		return this.pos.x;
 	}
@@ -87,7 +92,33 @@ class Enemy extends Rect {
 		this.pos = new Vec(x, y);
 	}
 	destroy() {
-		this.pos = new Vec(-100, 100)
+		if (--this.lives === 0) return true;
+	}
+}
+
+class SimpleEnemy extends Enemy {
+	constructor(x, y) {
+		super(x, y);
+		this.lives = 1;
+	}
+}
+
+class SuperEnemy extends Enemy {
+	constructor(x, y) {
+		super(x, y);
+		this.lives = 2;
+		this._color = '#ff6600';
+	}
+
+	get color() {
+		switch(this.lives) {
+			case 2:
+				return this._color;
+				break;
+			case 1:
+				return '#eee';
+				break;
+		}
 	}
 }
 
@@ -129,7 +160,7 @@ class Game {
 		while (150 - h > 0) {
 			let w = 0
 			while (canvas.width - w > 0) {
-				enemies.push(new Enemy(w, h));
+				enemies.push(new SuperEnemy(w, h));
 				w += 30
 			}
 			h += 20
@@ -187,7 +218,9 @@ class Game {
 			var coll = collide(this.ball, enemy)
 			if (coll) {
 				this.ball.vel = scalar(this.ball.vel, coll);
-				delete this.enemies[ind];
+				if (enemy.destroy()) {
+					delete this.enemies[ind];
+				}
 				this.score++;
 			}
 		})
@@ -240,7 +273,7 @@ class Game {
 }
 
 function fillRect(rect) {
-	context.fillStyle = '#eee'
+	context.fillStyle = rect.color;
 	context.fillRect(rect.pos.x, rect.pos.y, rect.size.x, rect.size.y);
 } 
 
