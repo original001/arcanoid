@@ -63,13 +63,21 @@ class Player extends Rect {
 	}
 
 	moveRight() {
-		if (this.right >= canvas.width) return;
+		if (this.right >= canvas.width || this._isBlocked) return;
 		this.pos.x += this.vel.x
 	}
 
 	moveLeft() {
-		if (this.left <= 0) return;
+		if (this.left <= 0 || this._isBlocked) return;
 		this.pos.x -= this.vel.x
+	}
+
+	block() {
+		this._isBlocked = true;
+	}
+
+	unblock() {
+		this._isBlocked = false;
 	}
 }
 
@@ -137,12 +145,26 @@ class Game {
 	start() {
 		if (this.ball.vel.x !== 0 && this.ball.vel.y !== 0) return;
 
+		if (this.isGameOver) {
+			this.player.unblock();
+			this.lives = 3;
+			this.score = 0;
+			this.genEnemies();
+			this.isGameOver = false;
+		}
+
 		this.ball.start();
 		this.isHooked = false;
 	}
 
 	lose() {
 		return this.ball.bottom >= canvas.height;
+	}
+
+	gameEnd() {
+		this.reset();
+		this.player.block();
+		this.isGameOver = true;
 	}
 
 	draw(time = 0) {
@@ -202,6 +224,14 @@ class Game {
 			context.font = '24px monospace';
 			context.textAlign = 'center';
 			context.fillText(`Game Over`, canvas.width / 2, canvas.height / 2);
+			this.gameEnd();
+		}
+
+		if (!this.enemies.some(enemy => !!enemy)) {
+			context.font = '24px monospace';
+			context.textAlign = 'center';
+			context.fillText(`Win!`, canvas.width / 2, canvas.height / 2);
+			this.gameEnd();
 		}
 
 		requestAnimationFrame(this.draw.bind(this));
