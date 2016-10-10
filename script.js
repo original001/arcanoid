@@ -57,8 +57,8 @@ class Ball extends Rect {
 
 class Player extends Rect {
 	constructor() {
-		super(100, 20)
-		this.pos = new Vec(canvas.width / 2 - this.size.x / 2, canvas.height - 20);
+		super(100, 10)
+		this.pos = new Vec(canvas.width / 2 - this.size.x / 2, canvas.height - 10);
 		this.vel = new Vec(10, 10);
 	}
 
@@ -90,6 +90,8 @@ class Game {
 		this.reset();
 		this.lastTime = 0;
 		this.draw();
+		this.score = 0;
+		this.lives = 3;
 	}
 	attachEvents() {
 		document.body.addEventListener('keydown', event => {
@@ -111,19 +113,8 @@ class Game {
 		this.player = new Player();
 		this.ball = new Ball();
 		this.genEnemies();
-		this.setScore(0);
-		this.setLives(3);
 	}
-	setLives(lives) {
-		var livesDom = document.getElementById('lives');
 
-		livesDom.innerHTML = +livesDom.innerHTML + lives;
-	}
-	setScore(score) {
-		var scoreDom = document.getElementById('score');
-
-		scoreDom.innerHTML = +scoreDom.innerHTML + score;
-	}
 	genEnemies() {
 		let enemies = [];
 		let h = 20;
@@ -170,12 +161,12 @@ class Game {
 			this.ball.vel = scalar(this.ball.vel, coll);
 		}
 
-		this.enemies.forEach(enemy => {
+		this.enemies.forEach((enemy, ind) => {
 			var coll = collide(this.ball, enemy)
 			if (coll) {
 				this.ball.vel = scalar(this.ball.vel, coll);
-				enemy.destroy()
-				this.setScore(1);
+				delete this.enemies[ind];
+				this.score++;
 			}
 		})
 
@@ -189,8 +180,9 @@ class Game {
 
 		if (this.lose()) {
 			this.reset();
-			this.setLives(-1);
+			this.lives--;
 		}
+
 
 		context.fillStyle = '#333';
 		context.fillRect(0, 0, canvas.width, canvas.height);
@@ -198,6 +190,19 @@ class Game {
 		fillRect(this.ball)
 		fillRect(this.player)
 		this.enemies.forEach(enemy => fillRect(enemy));
+
+		context.font = '14px monospace';
+		context.textAlign = 'left';
+		context.fillText(`Score: ${this.score}`, 10, 15);
+
+		context.textAlign = 'right';
+		context.fillText(`Lives: ${this.lives}`, canvas.width - 10, 15);
+
+		if (this.lives === 0) {
+			context.font = '24px monospace';
+			context.textAlign = 'center';
+			context.fillText(`Game Over`, canvas.width / 2, canvas.height / 2);
+		}
 
 		requestAnimationFrame(this.draw.bind(this));
 	}
