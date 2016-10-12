@@ -92,7 +92,21 @@ class Enemy extends Rect {
 		this.pos = new Vec(x, y);
 	}
 	destroy() {
-		if (--this.lives === 0) return true;
+		this.lives = this.lives - 1;
+		if (this.lives === 0) return true;
+	}
+	get color() {
+		switch(this.lives) {
+			case 3:
+				return '#ff2233';
+				break;
+			case 2:
+				return '#ff6600';
+				break;
+			case 1:
+				return '#eee';
+				break;
+		}
 	}
 }
 
@@ -107,20 +121,31 @@ class SuperEnemy extends Enemy {
 	constructor(x, y) {
 		super(x, y);
 		this.lives = 2;
-		this._color = '#ff6600';
-	}
-
-	get color() {
-		switch(this.lives) {
-			case 2:
-				return this._color;
-				break;
-			case 1:
-				return '#eee';
-				break;
-		}
 	}
 }
+
+class GiperEnemy extends Enemy {
+	constructor(x, y) {
+		super(x, y);
+		this.lives = 3;
+	}
+}
+
+class BonusEnemy extends Enemy {
+	constructor(x, y, bonus) {
+		super(x, y);
+		this._bonus = bonus
+		this.lives = 1;
+	}
+	get color() {
+		return '#55c118';
+	}	
+	destroy() {
+		this._bonus();
+		return super.destroy();
+	}
+}
+
 
 class Game {
 	constructor() {
@@ -158,37 +183,35 @@ class Game {
 		const enemiesMap = [
 			'1012112101',
 			'1211111121',
-			'0210220120',
-			'0210220120',
+			'0212332120',
+			'0212332120',
 			'1211111121',
-			'1012112101',
+			'1b121121b1',
 			]
 		let enemies = [];
 
 		enemiesMap.forEach((row, y) => {
 			row.split('').forEach((ememy, x) => {
 				let item;
+				const posX = x * 20 + x * 10;
+				const posY = 30 + y * 20;
 				switch (ememy) {
 					case '1':
-						item =  new SimpleEnemy(x * 20 + x * 10, 30 + y * 20);
+						item =  new SimpleEnemy(posX, posY);
 						break;
 					case '2':
-						item =  new SuperEnemy(x * 20 + x * 10, 30 + y * 20);
+						item =  new SuperEnemy(posX, posY);
+						break;
+					case '3':
+						item =  new GiperEnemy(posX, posY);
+						break;
+					case 'b':
+						item =  new BonusEnemy(posX, posY, this.createBonus.bind(this));
 						break;
 				}
 				item && enemies.push(item);
 			})
 		})
-
-		// let h = 20;
-		// while (150 - h > 0) {
-		// 	let w = 0
-		// 	while (canvas.width - w > 0) {
-		// 		enemies.push(new SuperEnemy(w, h));
-		// 		w += 30
-		// 	}
-		// 	h += 20
-		// }
 
 		this.enemies = enemies
 	}
@@ -214,6 +237,13 @@ class Game {
 
 	lose() {
 		return this.ball.bottom >= canvas.height;
+	}
+	createBonus() {
+		this.lives++
+		this.message = 'lives +1';
+		setTimeout(() => {
+			this.message = '';
+		}, 2000);
 	}
 
 	gameEnd() {
@@ -277,6 +307,10 @@ class Game {
 
 		context.textAlign = 'right';
 		context.fillText(`Lives: ${this.lives}`, canvas.width - 10, 15);
+
+		context.fillStyle = '#55c118';
+		context.textAlign = 'center';
+		this.message && context.fillText(this.message, canvas.width / 2, 15);
 
 		if (this.lives === 0) {
 			context.font = '24px monospace';
