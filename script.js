@@ -18,6 +18,10 @@ class Rect {
 		return this._color;
 	}
 
+	set color(color) {
+		this._color = color;
+	}
+
 	get left() {
 		return this.pos.x;
 	}
@@ -46,8 +50,8 @@ class Rect {
 class Ball extends Rect {
 	constructor() {
 		super(10, 10);
-		this._speedX = 150;
-		this._speedY = 150;
+		this._speedX = 100;
+		this._speedY = 100;
 		this.vel = new Vec(this._speedX, this._speedY);
 	}
 	stop() {
@@ -111,23 +115,9 @@ class Enemy extends Rect {
 }
 
 class SimpleEnemy extends Enemy {
-	constructor(x, y) {
+	constructor(x, y, lives) {
 		super(x, y);
-		this.lives = 1;
-	}
-}
-
-class SuperEnemy extends Enemy {
-	constructor(x, y) {
-		super(x, y);
-		this.lives = 2;
-	}
-}
-
-class GiperEnemy extends Enemy {
-	constructor(x, y) {
-		super(x, y);
-		this.lives = 3;
+		this.lives = lives;
 	}
 }
 
@@ -159,6 +149,7 @@ class Game {
 	}
 	attachEvents() {
 		document.body.addEventListener('keydown', event => {
+			console.log(event)
 			if (event.keyCode === 39) {
 				event.preventDefault();
 				this.player.moveRight();
@@ -181,12 +172,16 @@ class Game {
 
 	genEnemies() {
 		const enemiesMap = [
-			'1012112101',
-			'1211111121',
-			'0212332120',
-			'0212332120',
+			'1b111111b1',
+			'1212332121',
+			'1212332121',
 			'1211111121',
 			'1b121121b1',
+			'1b121121b1',
+			'1211111121',
+			'1212332121',
+			'1212332121',
+			'1b111111b1',
 			]
 		let enemies = [];
 
@@ -197,16 +192,16 @@ class Game {
 				const posY = 30 + y * 20;
 				switch (ememy) {
 					case '1':
-						item =  new SimpleEnemy(posX, posY);
+						item =  new SimpleEnemy(posX, posY, 1);
 						break;
 					case '2':
-						item =  new SuperEnemy(posX, posY);
+						item =  new SimpleEnemy(posX, posY, 2);
 						break;
 					case '3':
-						item =  new GiperEnemy(posX, posY);
+						item =  new SimpleEnemy(posX, posY, 3);
 						break;
 					case 'b':
-						item =  new BonusEnemy(posX, posY, this.createBonus.bind(this));
+						item =  new BonusEnemy(posX, posY, this.createBonus());
 						break;
 				}
 				item && enemies.push(item);
@@ -239,8 +234,42 @@ class Game {
 		return this.ball.bottom >= canvas.height;
 	}
 	createBonus() {
-		this.lives++
-		this.message = 'lives +1';
+		const addLives = () => {
+			this.lives++
+			this.setMessage('lives +1');
+		}
+
+		const fireBall = () => {
+			this.isFireBall = true;
+			this.ball.color = '#ff2233';
+			this.setMessage('fireball 5s');
+			setTimeout(() => {
+				this.isFireBall = false;
+				this.ball.color = '#eee';
+			}, 5000)
+		}
+
+		const expand = () => {
+			this.player.size.x = 150;
+			this.setMessage('expand 10s');
+			setTimeout(() => {
+				this.player.size.x = 100;
+			}, 10000)
+		}
+
+		const increaseSpeed = () => {
+			this.player.vel = new Vec(20, 20)
+			this.setMessage('faster 20s');
+			setTimeout(() => {
+				this.player.vel = new Vec(10, 10)
+			}, 10000)
+		}
+
+		return [addLives, fireBall, expand, increaseSpeed][Math.floor(Math.random() * 4)].bind(this);
+	}
+
+	setMessage(message) {
+		this.message = message;
 		setTimeout(() => {
 			this.message = '';
 		}, 2000);
@@ -271,7 +300,9 @@ class Game {
 		this.enemies.forEach((enemy, ind) => {
 			var coll = collide(this.ball, enemy)
 			if (coll) {
-				this.ball.vel = scalar(this.ball.vel, coll);
+				if (!this.isFireBall) {
+					this.ball.vel = scalar(this.ball.vel, coll);
+				}
 				if (enemy.destroy()) {
 					delete this.enemies[ind];
 				}
@@ -300,7 +331,7 @@ class Game {
 		fillRect(this.player)
 		this.enemies.forEach(enemy => fillRect(enemy));
 
-		context.fillStyle = this.ball.color;
+		context.fillStyle = '#eee';
 		context.font = '14px monospace';
 		context.textAlign = 'left';
 		context.fillText(`Score: ${this.score}`, 10, 15);
@@ -313,6 +344,7 @@ class Game {
 		this.message && context.fillText(this.message, canvas.width / 2, 15);
 
 		if (this.lives === 0) {
+			context.fillStyle = '#eee';
 			context.font = '24px monospace';
 			context.textAlign = 'center';
 			context.fillText(`Game Over`, canvas.width / 2, canvas.height / 2);
@@ -320,6 +352,7 @@ class Game {
 		}
 
 		if (!this.enemies.some(enemy => !!enemy)) {
+			context.fillStyle = this.ball.color;
 			context.font = '24px monospace';
 			context.textAlign = 'center';
 			context.fillText(`Win!`, canvas.width / 2, canvas.height / 2);
