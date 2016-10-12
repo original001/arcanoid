@@ -155,16 +155,40 @@ class Game {
 	}
 
 	genEnemies() {
+		const enemiesMap = [
+			'1012112101',
+			'1211111121',
+			'0210220120',
+			'0210220120',
+			'1211111121',
+			'1012112101',
+			]
 		let enemies = [];
-		let h = 20;
-		while (150 - h > 0) {
-			let w = 0
-			while (canvas.width - w > 0) {
-				enemies.push(new SuperEnemy(w, h));
-				w += 30
-			}
-			h += 20
-		}
+
+		enemiesMap.forEach((row, y) => {
+			row.split('').forEach((ememy, x) => {
+				let item;
+				switch (ememy) {
+					case '1':
+						item =  new SimpleEnemy(x * 20 + x * 10, 30 + y * 20);
+						break;
+					case '2':
+						item =  new SuperEnemy(x * 20 + x * 10, 30 + y * 20);
+						break;
+				}
+				item && enemies.push(item);
+			})
+		})
+
+		// let h = 20;
+		// while (150 - h > 0) {
+		// 	let w = 0
+		// 	while (canvas.width - w > 0) {
+		// 		enemies.push(new SuperEnemy(w, h));
+		// 		w += 30
+		// 	}
+		// 	h += 20
+		// }
 
 		this.enemies = enemies
 	}
@@ -246,6 +270,7 @@ class Game {
 		fillRect(this.player)
 		this.enemies.forEach(enemy => fillRect(enemy));
 
+		context.fillStyle = this.ball.color;
 		context.font = '14px monospace';
 		context.textAlign = 'left';
 		context.fillText(`Score: ${this.score}`, 10, 15);
@@ -273,6 +298,7 @@ class Game {
 }
 
 function fillRect(rect) {
+	if (!rect) return;
 	context.fillStyle = rect.color;
 	context.fillRect(rect.pos.x, rect.pos.y, rect.size.x, rect.size.y);
 } 
